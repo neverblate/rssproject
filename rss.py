@@ -1,6 +1,26 @@
 import requests
 import rss_parser
+import urllib2
+from urlparse import urlparse
+import feedparser
 from bs4 import BeautifulSoup
+
+FEED_LINKS_ATTRIBUTES = {
+    (('type', 'application/rss+xml'),),
+    (('type', 'application/atom+xml'),),
+    (('type', 'application/rss'),),
+    (('type', 'application/atom'),),
+    (('type', 'application/rdf+xml'),),
+    (('type', 'application/rdf'),),
+    (('type', 'text/rss+xml'),),
+    (('type', 'text/atom+xml'),),
+    (('type', 'text/rss'),),
+    (('type', 'text/atom'),),
+    (('type', 'text/rdf+xml'),),
+    (('type', 'text/rdf'),),
+    (('rel', 'alternate'), ('type', 'text/xml')),
+    (('rel', 'alternate'), ('type', 'application/xml'))
+}
 
 class RssPage():
     def __init__(self, url):
@@ -20,7 +40,7 @@ class RssPage():
         params = {
             'User-Agent' : 'Mozilla/5.0',
             'Host' : 'miteshshama.com',
-            'From' : 'isayhellotoyou@gmail.com'
+            'From' : 'miteshshama@gmail.com'
         }
         
         print 'self.url', self.url
@@ -82,3 +102,69 @@ class RssPage():
         html_parser.feed(html)
         return html_parser.get_data()
             
+class FeedPage():
+    def __init__(self, url):
+        self.working_feed_links_list = self._get_working_feed_links_list(url)
+                 
+    def _extract_feed_links(self, html, feed_links_attributes=FEED_LINKS_ATTRIBUTES):
+        """
+        Returns generator yielding feed links of a HTML page
+        """
+        soup = BeautifulSoup(html)
+        head_tags_list = soup.find_all('head')
+        links_list = []
+        for attrs in feed_links_attributes:
+            for head in head_tags_list:
+                for link in head.find_all('link', dict(attrs)):
+                    href = dict(link.attrs).get('href', '')
+                    # filter comments feed
+                    if href:
+                        yield unicode(href)
+                    
+    def _get_working_feed_links_list(self, url):
+        """
+        Returns a list of all working feed links url
+        """
+        # if the url is a feed itself, returns it
+        content = urllib2.urlopen(url).read(1000000)
+        feed = feedparser.parse(content)
+    
+        if not feed.get('bozo', 1):
+            return unicode(url)
+    
+        # construct the site url
+        parsed_url = urlparse(url)
+        site_url = u'%s://%s' % (parsed_url.scheme, parsed_url.netloc)
+    
+        working_feed_links_lists = []
+        for link in self._extract_feed_links(content):
+            if '://' not in link:
+                link  = site_url + link
+            feed = feedparser.parse(link)
+            print feed.version
+            if not feed.get('bozo', 1):
+                working_feed_links_lists.append(link)
+        return working_feed_links_lists
+    
+    
+if __name__ == "__main__": 
+    URL = ['http://techcrunch.com', 
+    'http://www.digg.com/', 
+    'http://www.engadget.com/',
+    'http://www.fastcompany.com/',
+    'http://gigaom.com/',
+    'http://mashable.com/',
+    'http://thenextweb.com/',
+    'http://www.lifehacker.com/',
+    'http://venturebeat.com/',
+    'http://www.theverge.com/',
+    'http://www.wired.com/'] 
+    for url in URL:
+        try:
+            print '======== Results from %s ========' % url
+            feed_page = FeedPage(url)
+            print feed_page.working_feed_links_list
+            print '\n'
+        except:
+            pass
+    print '======== END ======='
