@@ -4,6 +4,7 @@ import urllib2
 from urlparse import urlparse
 import feedparser
 from bs4 import BeautifulSoup
+from HTMLParser import HTMLParser
 
 FEED_LINKS_ATTRIBUTES = {
     (('type', 'application/rss+xml'),),
@@ -21,6 +22,22 @@ FEED_LINKS_ATTRIBUTES = {
     (('rel', 'alternate'), ('type', 'text/xml')),
     (('rel', 'alternate'), ('type', 'application/xml'))
 }
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.strict = False
+        self.convert_charrefs= True
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
 
 class RssPage():
     def __init__(self, url):
