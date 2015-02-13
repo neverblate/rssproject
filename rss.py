@@ -105,7 +105,9 @@ class RssPage():
 class FeedPage():
     def __init__(self, url):
         self.working_feed_links_list = self._get_working_feed_links_list(url)
-                 
+        # assume first link!
+        self.feed = feedparser.parse(self.working_feed_links_list[0])
+                       
     def _extract_feed_links(self, html, feed_links_attributes=FEED_LINKS_ATTRIBUTES):
         """
         Returns generator yielding feed links of a HTML page
@@ -141,7 +143,7 @@ class FeedPage():
             if '://' not in link:
                 link  = site_url + link
             feed = feedparser.parse(link)
-            print feed.version
+
             if not feed.get('bozo', 1):
                 working_feed_links_lists.append(link)
         return working_feed_links_lists
@@ -163,7 +165,17 @@ if __name__ == "__main__":
         try:
             print '======== Results from %s ========' % url
             feed_page = FeedPage(url)
-            print feed_page.working_feed_links_list
+            print feed_page.feed.version
+            #print feed_page._working_feed_links_list
+            print 'Title: ', feed_page.feed.entries[0].title
+            try:
+                print 'Author: ', feed_page.feed.entries[0].author
+            except:
+                pass
+            print 'Link: ', feed_page.feed.entries[0].link
+            print 'Published: ', feed_page.feed.entries[0].published
+            print 'Updated: ', feed_page.feed.entries[0].updated
+            print 'Description: ', feed_page.feed.entries[0].description
             print '\n'
         except:
             pass
