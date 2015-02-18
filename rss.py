@@ -192,7 +192,9 @@ if __name__ == "__main__":
             print 'Link: ', feed_page.feed.entries[0].link
             print 'Published: ', feed_page.feed.entries[0].published
             print 'Updated: ', feed_page.feed.entries[0].updated
-            print 'Description: ', feed_page.feed.entries[0].description
+            for entry in BeautifulSoup(feed_page.feed.entries[0].description).stripped_strings:
+                print entry
+            #print 'Description: ', BeautifulSoup(feed_page.feed.entries[0].description).p
             print '\n'
         except:
             pass
